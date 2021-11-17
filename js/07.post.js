@@ -1,6 +1,7 @@
 const { Component, createRef } = React;
 const { render } = ReactDOM;
 const postURL = 'https://jsonplaceholder.typicode.com/posts';
+const userURL = 'https://jsonplaceholder.typicode.com/users';
 
 class Search extends Component {
   btClose = { right: '1em', cursor: 'pointer' };
@@ -16,6 +17,7 @@ class Search extends Component {
   onClose = (e) => {
     this.setState({ query: '' });
     this.queryRef.current.focus();
+    this.props.changeInput('');
   };
   render() {
     return (
@@ -44,6 +46,18 @@ class Search extends Component {
 }
 
 class Lists extends Component {
+  caret = { cursor: 'pointer' };
+  state = {
+    sort: 'asc',
+  };
+  onChangeDesc = (e) => {
+    this.setState({ sort: 'desc' });
+    this.props.changeSort('desc');
+  };
+  onChangeAsc = (e) => {
+    this.setState({ sort: 'asc' });
+    this.props.changeSort('asc');
+  };
   render() {
     return (
       <table className="table my-3">
@@ -55,7 +69,22 @@ class Lists extends Component {
         </colgroup>
         <thead>
           <tr>
-            <th>번호</th>
+            <th>
+              번호
+              {this.state.sort === 'asc' ? (
+                <i
+                  className="fa fa-caret-down"
+                  style={this.caret}
+                  onClick={this.onChangeDesc}
+                />
+              ) : (
+                <i
+                  className="fa fa-caret-up"
+                  style={this.caret}
+                  onClick={this.onChangeAsc}
+                />
+              )}
+            </th>
             <th>제목</th>
             <th>작성자</th>
             <th>내용</th>
@@ -77,7 +106,7 @@ class List extends Component {
       <tr>
         <td>{this.props.post.id}</td>
         <td>{this.props.post.title}</td>
-        <td>{this.props.post.userId}</td>
+        <td>{this.props.post.name}</td>
         <td>{this.props.post.body}</td>
       </tr>
     );
@@ -96,9 +125,22 @@ class App extends Component {
       ),
     });
   };
+  changeSort = (value) => {
+    this.setState({
+      searchPosts:
+        value === 'asc'
+          ? _.sortBy(this.state.searchPosts, 'id')
+          : _.sortBy(this.state.searchPosts, 'id').reverse(),
+    });
+  };
   async componentDidMount() {
     try {
       const { data: posts } = await axios.get(postURL);
+      const { data: users } = await axios.get(userURL);
+      posts.forEach((post) => {
+        let [{ name }] = users.filter((user) => user.id === post.userId);
+        post.name = name;
+      });
       this.setState({
         ...this.state,
         allPosts: [...posts],
@@ -112,7 +154,7 @@ class App extends Component {
     return (
       <div className="container">
         <Search changeInput={this.changeInput} />
-        <Lists posts={this.state.searchPosts} />
+        <Lists posts={this.state.searchPosts} changeSort={this.changeSort} />
       </div>
     );
   }
