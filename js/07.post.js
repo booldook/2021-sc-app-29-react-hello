@@ -4,12 +4,40 @@ const postURL = 'https://jsonplaceholder.typicode.com/posts';
 
 class Search extends Component {
   btClose = { right: '1em', cursor: 'pointer' };
+  state = {
+    query: '',
+  };
+  queryRef = createRef();
+  onChange = (e) => {
+    // this.setState({ query: this.queryRef.current.value })
+    this.setState({ query: e.target.value });
+    this.props.changeInput(e.target.value);
+  };
+  onClose = (e) => {
+    this.setState({ query: '' });
+    this.queryRef.current.focus();
+  };
   render() {
     return (
       <form className="my-4 d-flex align-items-center position-relative">
         <h3 className="mr-3 font-weight-bold flex-shrink-0">검색어: </h3>
-        <input className="form-control" autoFocus />
-        <i className="fa fa-times position-absolute" style={this.btClose} />
+        <input
+          onChange={this.onChange}
+          ref={this.queryRef}
+          className="form-control"
+          autoFocus
+          placeholder="검색할 단어를 적어주세요"
+          value={this.state.query}
+        />
+        {this.state.query.length ? (
+          <i
+            className="fa fa-times position-absolute"
+            style={this.btClose}
+            onClick={this.onClose}
+          />
+        ) : (
+          ''
+        )}
       </form>
     );
   }
@@ -58,9 +86,15 @@ class List extends Component {
 
 class App extends Component {
   state = {
-    query: '',
     allPosts: [],
     searchPosts: [],
+  };
+  changeInput = (value) => {
+    this.setState({
+      searchPosts: this.state.allPosts.filter(
+        (post) => post.title.includes(value) || post.body.includes(value)
+      ),
+    });
   };
   async componentDidMount() {
     try {
@@ -77,7 +111,7 @@ class App extends Component {
   render() {
     return (
       <div className="container">
-        <Search />
+        <Search changeInput={this.changeInput} />
         <Lists posts={this.state.searchPosts} />
       </div>
     );
